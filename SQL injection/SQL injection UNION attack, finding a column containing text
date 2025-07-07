@@ -1,13 +1,13 @@
 Lab: SQL injection UNION attack, finding a column containing text
 
-Descrizione
+📝 Descrizione
 
 Il lab presenta una vulnerabilità di SQL injection nel filtro categoria.  
 L’obiettivo è effettuare un attacco UNION per restituire una riga aggiuntiva contenente un valore testuale casuale fornito dal lab, così da identificare quale colonna accetta dati di tipo stringa.
 
 ---
 
-Passaggi eseguiti
+⚙️ Passaggi eseguiti
 
 1. Intercettata la richiesta con Burp Suite sul parametro `category`.
 2. Determinato il numero di colonne con:
@@ -24,14 +24,14 @@ Passaggi eseguiti
 
 ---
 
-Ragionamento tecnico
+🧠 Ragionamento tecnico
 
 Il payload UNION deve avere lo stesso numero di colonne della query originale.  
 Sostituendo NULL con un valore di testo, si verifica quale colonna è compatibile con stringhe, dato che errori indicano incompatibilità.
 
 ---
 
-Soluzione finale
+✅ Soluzione finale
 
 **Payload utilizzato (esempio con la prima colonna testata):**
 
