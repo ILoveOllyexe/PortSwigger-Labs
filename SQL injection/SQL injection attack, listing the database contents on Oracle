@@ -1,13 +1,13 @@
 Lab: SQL injection attack, listing the database contents on Oracle
 
-Descrizione
+📝Descrizione
 
 Il lab contiene una SQL injection nel filtro della categoria dei prodotti.  
 L'obiettivo è sfruttare un attacco UNION per elencare le tabelle e le colonne presenti nel database Oracle, ottenere username e password degli utenti e accedere come **administrator**.
 
 ---
 
-Passaggi eseguiti
+⚙️Passaggi eseguiti
 
 1. Intercettata la richiesta con Burp Suite sul parametro `category`.
 2. Verificata la vulnerabilità e il numero di colonne con:
@@ -34,14 +34,14 @@ Identificate le colonne `USERNAME_ABCDEF` e `PASSWORD_ABCDEF`.
 
 ---
 
-Ragionamento tecnico
+🧠Ragionamento tecnico
 
 In Oracle è obbligatorio specificare una tabella anche in una `SELECT` statica. Si utilizza la tabella built-in `dual` per soddisfare questa condizione.  
 L’attacco sfrutta una SQL injection di tipo UNION-based per accedere a metadati (`all_tables`, `all_tab_columns`) e dati sensibili.
 
 ---
 
-Soluzione finale
+✅Soluzione finale
 
 **Payload principali:**
 
