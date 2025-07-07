@@ -1,1 +1,46 @@
+# Lab: SQL Injection vulnerability in WHERE clause allowing retrieval of hidden data
 
+## 🧩 Descrizione
+
+Questo laboratorio di PortSwigger presenta una vulnerabilità di **SQL Injection (SQLi)** all'interno del filtro di categoria dei prodotti. 
+Quando l'utente seleziona una categoria (es. "Gifts"), l'applicazione esegue una query SQL simile a: SELECT * FROM products WHERE category = 'Gifts' AND released = 1
+
+L'obiettivo del lab è manipolare la query SQL tramite un attacco SQLi in modo da ottenere anche i prodotti non ancora rilasciati, che normalmente vengono esclusi con la clausola AND released = 1.
+
+
+🧪 Passaggi Eseguiti
+-Ho avviato Burp Suite e configurato il browser per passare attraverso il proxy.
+
+-Ho navigato nel sito del lab e selezionato una categoria di prodotti qualsiasi.
+
+-Ho intercettato la richiesta HTTP relativa al filtro categoria con Burp Intercept.
+
+-Ho individuato il parametro category nella query string o nel body della richiesta.
+
+-Ho modificato il valore del parametro 
+da: category=Gifts
+a: category=Gifts'+OR+1=1--
+
+-Ho inviato la richiesta modificata e osservato la risposta.
+
+-Ho verificato che nella risposta HTML venivano ora mostrati prodotti precedentemente nascosti, ovvero non rilasciati.
+
+
+🧠 Ragionamento Tecnico
+La vulnerabilità sfrutta una SQL Injection nel filtro categoria, dove l'input non viene adeguatamente sanitizzato. 
+
+La query originale: SELECT * FROM products WHERE category = 'Gifts' AND released = 1
+viene alterata in: SELECT * FROM products WHERE category = 'Gifts' OR 1=1-- ' AND released = 1' OR 1=1-- (forza la condizione a true per tutti i record, ignorando completamente la clausola released = 1).
+
+Il doppio trattino -- commenta il resto della query, evitando errori di sintassi.
+
+Questo permette all'attaccante di aggirare il filtro e visualizzare prodotti non ancora rilasciati, violando la logica dell'applicazione.
+
+
+✅ Soluzione Finale
+
+Payload utilizzato:category=Gifts'+OR+1=1--
+
+Dopo aver inviato la richiesta modificata, la risposta HTML ha mostrato nuovi prodotti non visibili precedentemente, confermando la riuscita dell'attacco.
+
+⚠️ Questo tipo di vulnerabilità può avere implicazioni critiche in ambienti reali, come accesso a dati sensibili o bypass di autorizzazioni.
