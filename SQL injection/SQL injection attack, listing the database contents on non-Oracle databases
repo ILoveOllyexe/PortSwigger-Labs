@@ -1,1 +1,40 @@
+Lab: SQL injection attack, querying the database type and version on MySQL and Microsoft
 
+
+📝 Descrizione
+
+Il lab presenta una vulnerabilità di SQL injection nel filtro della categoria prodotti.  
+L'obiettivo è eseguire un attacco UNION per estrarre e visualizzare la versione del database.
+
+---
+
+⚙️ Passaggi eseguiti
+
+1. Intercettata la richiesta con Burp Suite sul parametro `category`.
+2. Verificata la vulnerabilità con un apice `'` iniettato manualmente.
+3. Testato il numero di colonne con:
+
+' UNION SELECT NULL,NULL--
+
+4. Verificato che entrambe le colonne accettano dati testuali con:
+
+' UNION SELECT 'abc','def'--
+
+5. Inserita una funzione per ottenere la versione del DB:
+
+' UNION SELECT @@version,NULL--
+
+---
+
+🧠 Ragionamento tecnico
+
+L'iniezione sfrutta un'istruzione `UNION SELECT` per unire una query controllata all'output della query principale.  
+È stato necessario trovare il numero corretto di colonne e assicurarsi che una colonna mostri dati testuali.
+
+---
+
+✅ Soluzione finale
+
+Payload utilizzato:' UNION SELECT @@version,NULL--
+
+Una volta eseguito, la versione del database viene mostrata nella pagina, completando il lab.
