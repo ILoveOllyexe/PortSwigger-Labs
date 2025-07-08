@@ -1,0 +1,35 @@
+Lab: SQL Injection UNION Attack – Retrieving Data from Other Tables
+
+📝 Descrizione
+Il parametro category è vulnerabile a SQL injection. I risultati della query vengono mostrati nella pagina, quindi è possibile sfruttare un attacco UNION-based per accedere a dati da altre tabelle, in particolare alla tabella users che contiene username e password.
+
+---
+
+⚙️ Passaggi eseguiti
+Intercettato il parametro category con Burp Suite (/filter?category=...).
+
+Determinato che la query restituisce 2 colonne usando:
+
+' UNION SELECT NULL,NULL--
+
+Verificato che entrambe le colonne accettano stringhe:
+
+' UNION SELECT 'a','b'--
+
+Estratti dati dalla tabella users:
+
+' UNION SELECT username, password FROM users--
+
+Login effettuato come administrator con le credenziali trovate.
+
+🧠 Ragionamento tecnico
+L’attacco sfrutta un’iniezione SQL UNION per combinare la query originale con una SELECT arbitraria. Per riuscire, bisogna:
+
+-eguagliare numero e tipo di colonne,
+-estrarre i dati visibili nella risposta.
+
+🏁 Soluzione finale
+
+' UNION SELECT username, password FROM users--
+
+Questa iniezione ha rivelato le credenziali di tutti gli utenti. Usando quelle dell’administrator, il login ha avuto successo e il lab è stato risolto.
